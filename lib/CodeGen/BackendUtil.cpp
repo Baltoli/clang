@@ -27,6 +27,7 @@
 #include "llvm/CodeGen/RegAllocRegistry.h"
 #include "llvm/CodeGen/SchedulerRegistry.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/IDL/CustomPasses.hpp"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -60,7 +61,6 @@
 #include "llvm/Transforms/Utils.h"
 #include "llvm/Transforms/Utils/NameAnonGlobals.h"
 #include "llvm/Transforms/Utils/SymbolRewriter.h"
-#include "llvm/IDL/CustomPasses.hpp"
 #include <memory>
 using namespace clang;
 using namespace llvm;
@@ -160,19 +160,22 @@ private:
   const CodeGenOptions &CGOpts;
   const LangOptions &LangOpts;
 };
-}
+} // namespace
 
-static void addObjCARCAPElimPass(const PassManagerBuilder &Builder, PassManagerBase &PM) {
+static void addObjCARCAPElimPass(const PassManagerBuilder &Builder,
+                                 PassManagerBase &PM) {
   if (Builder.OptLevel > 0)
     PM.add(createObjCARCAPElimPass());
 }
 
-static void addObjCARCExpandPass(const PassManagerBuilder &Builder, PassManagerBase &PM) {
+static void addObjCARCExpandPass(const PassManagerBuilder &Builder,
+                                 PassManagerBase &PM) {
   if (Builder.OptLevel > 0)
     PM.add(createObjCARCExpandPass());
 }
 
-static void addObjCARCOptPass(const PassManagerBuilder &Builder, PassManagerBase &PM) {
+static void addObjCARCOptPass(const PassManagerBuilder &Builder,
+                              PassManagerBase &PM) {
   if (Builder.OptLevel > 0)
     PM.add(createObjCARCOptPass());
 }
@@ -190,7 +193,7 @@ static void addBoundsCheckingPass(const PassManagerBuilder &Builder,
 static void addSanitizerCoveragePass(const PassManagerBuilder &Builder,
                                      legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
-      static_cast<const PassManagerBuilderWrapper&>(Builder);
+      static_cast<const PassManagerBuilderWrapper &>(Builder);
   const CodeGenOptions &CGOpts = BuilderWrapper.getCGOpts();
   SanitizerCoverageOptions Opts;
   Opts.CoverageType =
@@ -231,7 +234,7 @@ static bool asanUseGlobalsGC(const Triple &T, const CodeGenOptions &CGOpts) {
 static void addAddressSanitizerPasses(const PassManagerBuilder &Builder,
                                       legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
-      static_cast<const PassManagerBuilderWrapper&>(Builder);
+      static_cast<const PassManagerBuilderWrapper &>(Builder);
   const Triple &T = BuilderWrapper.getTargetTriple();
   const CodeGenOptions &CGOpts = BuilderWrapper.getCGOpts();
   bool Recover = CGOpts.SanitizeRecover.has(SanitizerKind::Address);
@@ -252,7 +255,7 @@ static void addKernelAddressSanitizerPasses(const PassManagerBuilder &Builder,
 }
 
 static void addHWAddressSanitizerPasses(const PassManagerBuilder &Builder,
-                                            legacy::PassManagerBase &PM) {
+                                        legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
       static_cast<const PassManagerBuilderWrapper &>(Builder);
   const CodeGenOptions &CGOpts = BuilderWrapper.getCGOpts();
@@ -261,7 +264,7 @@ static void addHWAddressSanitizerPasses(const PassManagerBuilder &Builder,
 }
 
 static void addKernelHWAddressSanitizerPasses(const PassManagerBuilder &Builder,
-                                            legacy::PassManagerBase &PM) {
+                                              legacy::PassManagerBase &PM) {
   PM.add(createHWAddressSanitizerPass(
       /*CompileKernel*/ true, /*Recover*/ true));
 }
@@ -269,7 +272,7 @@ static void addKernelHWAddressSanitizerPasses(const PassManagerBuilder &Builder,
 static void addMemorySanitizerPass(const PassManagerBuilder &Builder,
                                    legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
-      static_cast<const PassManagerBuilderWrapper&>(Builder);
+      static_cast<const PassManagerBuilderWrapper &>(Builder);
   const CodeGenOptions &CGOpts = BuilderWrapper.getCGOpts();
   int TrackOrigins = CGOpts.SanitizeMemoryTrackOrigins;
   bool Recover = CGOpts.SanitizeRecover.has(SanitizerKind::Memory);
@@ -296,7 +299,7 @@ static void addThreadSanitizerPass(const PassManagerBuilder &Builder,
 static void addDataFlowSanitizerPass(const PassManagerBuilder &Builder,
                                      legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
-      static_cast<const PassManagerBuilderWrapper&>(Builder);
+      static_cast<const PassManagerBuilderWrapper &>(Builder);
   const LangOptions &LangOpts = BuilderWrapper.getLangOpts();
   PM.add(createDataFlowSanitizerPass(LangOpts.SanitizerBlacklistFiles));
 }
@@ -304,7 +307,7 @@ static void addDataFlowSanitizerPass(const PassManagerBuilder &Builder,
 static void addEfficiencySanitizerPass(const PassManagerBuilder &Builder,
                                        legacy::PassManagerBase &PM) {
   const PassManagerBuilderWrapper &BuilderWrapper =
-      static_cast<const PassManagerBuilderWrapper&>(Builder);
+      static_cast<const PassManagerBuilderWrapper &>(Builder);
   const LangOptions &LangOpts = BuilderWrapper.getLangOpts();
   EfficiencySanitizerOptions Opts;
   if (LangOpts.Sanitize.has(SanitizerKind::EfficiencyCacheFrag))
@@ -682,8 +685,9 @@ void EmitAssemblyHelper::CreatePasses(legacy::PassManager &MPM,
   if (CodeGenOpts.hasProfileIRUse())
     PMBuilder.PGOInstrUse = CodeGenOpts.ProfileInstrumentUsePath;
 
-  if (true) PMBuilder.addExtension(PassManagerBuilder::EP_OptimizerLast,
-                                   addConstraintResearchPasses);
+  // TODO: NEWIDL
+  /* if (true) PMBuilder.addExtension(PassManagerBuilder::EP_OptimizerLast, */
+  /*                                  addConstraintResearchPasses); */
 
   if (!CodeGenOpts.SampleProfileFile.empty())
     PMBuilder.PGOSampleUse = CodeGenOpts.SampleProfileFile;
@@ -704,8 +708,7 @@ static void setCommandLineOpts(const CodeGenOptions &CodeGenOpts) {
     BackendArgs.push_back(CodeGenOpts.LimitFloatPrecision.c_str());
   }
   BackendArgs.push_back(nullptr);
-  llvm::cl::ParseCommandLineOptions(BackendArgs.size() - 1,
-                                    BackendArgs.data());
+  llvm::cl::ParseCommandLineOptions(BackendArgs.size() - 1, BackendArgs.data());
 }
 
 void EmitAssemblyHelper::CreateTargetMachine(bool MustCreateTM) {
@@ -767,8 +770,7 @@ void EmitAssemblyHelper::EmitAssembly(BackendAction Action,
   setCommandLineOpts(CodeGenOpts);
 
   bool UsesCodeGen = (Action != Backend_EmitNothing &&
-                      Action != Backend_EmitBC &&
-                      Action != Backend_EmitLL);
+                      Action != Backend_EmitBC && Action != Backend_EmitLL);
   CreateTargetMachine(UsesCodeGen);
 
   if (UsesCodeGen && !TM)
@@ -815,9 +817,8 @@ void EmitAssemblyHelper::EmitAssembly(BackendAction Action,
       if (EmitLTOSummary && !TheModule->getModuleFlag("ThinLTO"))
         TheModule->addModuleFlag(Module::Error, "ThinLTO", uint32_t(0));
 
-      PerModulePasses.add(
-          createBitcodeWriterPass(*OS, CodeGenOpts.EmitLLVMUseLists,
-                                  EmitLTOSummary));
+      PerModulePasses.add(createBitcodeWriterPass(
+          *OS, CodeGenOpts.EmitLLVMUseLists, EmitLTOSummary));
     }
     break;
 
@@ -989,8 +990,8 @@ void EmitAssemblyHelper::EmitAssemblyWithNewPassManager(
       // configure the pipeline.
       PassBuilder::OptimizationLevel Level = mapToLevel(CodeGenOpts);
 
-      // Register callbacks to schedule sanitizer passes at the appropriate part of
-      // the pipeline.
+      // Register callbacks to schedule sanitizer passes at the appropriate part
+      // of the pipeline.
       if (LangOpts.Sanitize.has(SanitizerKind::LocalBounds))
         PB.registerScalarOptimizerLateEPCallback(
             [](FunctionPassManager &FPM, PassBuilder::OptimizationLevel Level) {
@@ -1046,8 +1047,8 @@ void EmitAssemblyHelper::EmitAssemblyWithNewPassManager(
       if (EmitLTOSummary && !TheModule->getModuleFlag("ThinLTO"))
         TheModule->addModuleFlag(Module::Error, "ThinLTO", uint32_t(0));
 
-      MPM.addPass(BitcodeWriterPass(*OS, CodeGenOpts.EmitLLVMUseLists,
-                                    EmitLTOSummary));
+      MPM.addPass(
+          BitcodeWriterPass(*OS, CodeGenOpts.EmitLLVMUseLists, EmitLTOSummary));
     }
     break;
 
@@ -1123,8 +1124,7 @@ static void runThinLTOBackend(ModuleSummaryIndex *CombinedIndex, Module *M,
                               const clang::TargetOptions &TOpts,
                               const LangOptions &LOpts,
                               std::unique_ptr<raw_pwrite_stream> OS,
-                              std::string SampleProfile,
-                              BackendAction Action) {
+                              std::string SampleProfile, BackendAction Action) {
   StringMap<DenseMap<GlobalValue::GUID, GlobalValueSummary *>>
       ModuleToDefinedGVSummaries;
   CombinedIndex->collectDefinedGVSummariesPerModule(ModuleToDefinedGVSummaries);
@@ -1232,26 +1232,24 @@ static void runThinLTOBackend(ModuleSummaryIndex *CombinedIndex, Module *M,
   }
 }
 
-void clang::EmitBackendOutput(DiagnosticsEngine &Diags,
-                              const HeaderSearchOptions &HeaderOpts,
-                              const CodeGenOptions &CGOpts,
-                              const clang::TargetOptions &TOpts,
-                              const LangOptions &LOpts,
-                              const llvm::DataLayout &TDesc, Module *M,
-                              BackendAction Action,
-                              std::unique_ptr<raw_pwrite_stream> OS) {
+void clang::EmitBackendOutput(
+    DiagnosticsEngine &Diags, const HeaderSearchOptions &HeaderOpts,
+    const CodeGenOptions &CGOpts, const clang::TargetOptions &TOpts,
+    const LangOptions &LOpts, const llvm::DataLayout &TDesc, Module *M,
+    BackendAction Action, std::unique_ptr<raw_pwrite_stream> OS) {
   std::unique_ptr<llvm::Module> EmptyModule;
   if (!CGOpts.ThinLTOIndexFile.empty()) {
     // If we are performing a ThinLTO importing compile, load the function index
     // into memory and pass it into runThinLTOBackend, which will run the
     // function importer and invoke LTO passes.
     Expected<std::unique_ptr<ModuleSummaryIndex>> IndexOrErr =
-        llvm::getModuleSummaryIndexForFile(CGOpts.ThinLTOIndexFile,
-                                           /*IgnoreEmptyThinLTOIndexFile*/true);
+        llvm::getModuleSummaryIndexForFile(
+            CGOpts.ThinLTOIndexFile,
+            /*IgnoreEmptyThinLTOIndexFile*/ true);
     if (!IndexOrErr) {
       logAllUnhandledErrors(IndexOrErr.takeError(), errs(),
                             "Error loading index file '" +
-                            CGOpts.ThinLTOIndexFile + "': ");
+                                CGOpts.ThinLTOIndexFile + "': ");
       return;
     }
     std::unique_ptr<ModuleSummaryIndex> CombinedIndex = std::move(*IndexOrErr);
@@ -1297,7 +1295,7 @@ void clang::EmitBackendOutput(DiagnosticsEngine &Diags,
   }
 }
 
-static const char* getSectionNameForBitcode(const Triple &T) {
+static const char *getSectionNameForBitcode(const Triple &T) {
   switch (T.getObjectFormat()) {
   case Triple::MachO:
     return "__LLVM,__bitcode";
@@ -1310,7 +1308,7 @@ static const char* getSectionNameForBitcode(const Triple &T) {
   llvm_unreachable("Unimplemented ObjectFormatType");
 }
 
-static const char* getSectionNameForCommandline(const Triple &T) {
+static const char *getSectionNameForCommandline(const Triple &T) {
   switch (T.getObjectFormat()) {
   case Triple::MachO:
     return "__LLVM,__cmdline";
@@ -1331,8 +1329,8 @@ void clang::EmbedBitcode(llvm::Module *M, const CodeGenOptions &CGOpts,
     return;
 
   // Save llvm.compiler.used and remote it.
-  SmallVector<Constant*, 2> UsedArray;
-  SmallPtrSet<GlobalValue*, 4> UsedGlobals;
+  SmallVector<Constant *, 2> UsedArray;
+  SmallPtrSet<GlobalValue *, 4> UsedGlobals;
   Type *UsedElementType = Type::getInt8Ty(M->getContext())->getPointerTo(0);
   GlobalVariable *Used = collectUsedGlobalVariables(*M, UsedGlobals, true);
   for (auto *GV : UsedGlobals) {
@@ -1389,7 +1387,7 @@ void clang::EmbedBitcode(llvm::Module *M, const CodeGenOptions &CGOpts,
     ArrayRef<uint8_t> CmdData(const_cast<uint8_t *>(CGOpts.CmdArgs.data()),
                               CGOpts.CmdArgs.size());
     llvm::Constant *CmdConstant =
-      llvm::ConstantDataArray::get(M->getContext(), CmdData);
+        llvm::ConstantDataArray::get(M->getContext(), CmdData);
     GV = new llvm::GlobalVariable(*M, CmdConstant->getType(), true,
                                   llvm::GlobalValue::PrivateLinkage,
                                   CmdConstant);
