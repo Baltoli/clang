@@ -357,13 +357,19 @@ static void addSymbolRewriterPass(const CodeGenOptions &Opts,
 // My custom research stuff.
 static void addConstraintResearchPasses(const PassManagerBuilder &Builder,
                                         legacy::PassManagerBase &PM) {
-  PM.add(createResearchFlangfixPass());
-  PM.add(createResearchPreprocessorPass());
+  // Preprocessing code to get things ready for detection should run here
+  /* PM.add(createResearchFlangfixPass()); */
+  /* PM.add(createResearchPreprocessorPass()); */
+
   PM.add(createDeadCodeEliminationPass());
   PM.add(createLICMPass());
   PM.add(createEarlyCSEPass());
   PM.add(createIndVarSimplifyPass());
-  PM.add(createResearchReplacerPass());
+
+  // And then my custom code here to actually search for things, mimicking
+  // Philip's original version of the pass.
+  /* PM.add(createResearchReplacerPass()); */
+
   PM.add(createAggressiveDCEPass());
   PM.add(createLoopDeletionPass());
   PM.add(createEarlyCSEPass());
