@@ -369,6 +369,7 @@ static void addConstraintResearchPasses(const PassManagerBuilder &Builder,
   // And then my custom code here to actually search for things, mimicking
   // Philip's original version of the pass.
   /* PM.add(createResearchReplacerPass()); */
+  PM.add(createDetectorPass());
 
   PM.add(createAggressiveDCEPass());
   PM.add(createLoopDeletionPass());
