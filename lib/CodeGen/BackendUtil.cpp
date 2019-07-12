@@ -359,7 +359,7 @@ static void addConstraintResearchPasses(const PassManagerBuilder &Builder,
                                         legacy::PassManagerBase &PM) {
   // Preprocessing code to get things ready for detection should run here
   PM.add(createResearchFlangfixPass());
-  PM.add(createResearchPreprocessorPass());
+  /* PM.add(createResearchPreprocessorPass()); */
 
   PM.add(createDeadCodeEliminationPass());
   PM.add(createLICMPass());
